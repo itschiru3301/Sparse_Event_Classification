@@ -1,0 +1,7 @@
+torch>=2.0.0
+h5py>=3.0.0
+numpy>=1.21.0
+tqdm>=4.62.0
+spconv-cu118>=2.3.0
+scikit-learn>=1.0.0
+matplotlib>=3.5.0
