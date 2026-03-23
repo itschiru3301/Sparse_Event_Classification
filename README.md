@@ -1,20 +1,20 @@
 # Sparse Autoencoder for Event Classification
 
-A production-ready implementation of sparse neural networks for end-to-end event classification with pruning analysis. Trains sparse autoencoders on unlabelled data, fine-tunes a classifier, and analyzes the pruning-accuracy tradeoff.
+A production-ready implementation of sparse neural networks for end-to-end event classification with pruning analysis. This project trains sparse autoencoders on unlabelled data, fine-tunes a classifier on labelled data, and analyzes the pruning-accuracy tradeoff using saved model weights.
 
 ## Overview
 
 This project implements the complete pipeline for sparse event classification as described in end-to-end neural network tasks for particle physics:
 
-1. **Autoencoder Pretraining**: Train a sparse autoencoder on unlabelled jet events
-2. **Classifier Fine-tuning**: Fine-tune the encoder with a classification head on labelled data
-3. **Pruning Analysis**: Systematically prune weights and measure FLOPs vs error tradeoff
+1. **Phase 1 - Autoencoder Training**: Train a sparse autoencoder on unlabelled jet events and save trained weights
+2. **Phase 2 - Classifier Fine-tuning**: Load the trained autoencoder weights, freeze the encoder, and fine-tune a classification head on labelled data
+3. **Phase 3 - Pruning Analysis**: Systematically prune weights and measure FLOPs vs error tradeoff
 
 ## Key Features
 
 - **Sparse Convolutions**: Uses spconv library for memory-efficient computation on sparse data
 - **Production Code**: Clean, minimal Python implementation without unnecessary abstractions
-- **Pre-trained Models**: Includes trained `sparse_ae.pth` and `sparse_classifier.pth` weights
+- **Trained Models**: Includes saved weights from the training pipeline (`sparse_ae.pth` and `sparse_classifier.pth`)
 - **Analysis Tools**: Reconstruction quality assessment and pruning performance visualization
 - **Bash Runners**: Easy background execution with logging via nohup
 
@@ -22,16 +22,20 @@ This project implements the complete pipeline for sparse event classification as
 
 ```
 .
-├── train.py                      # Phase 1: Autoencoder pretraining + Phase 2: Classification
-├── finetune.py                   # Separate fine-tuning script for pretrained models
-├── run.sh                        # Bash runner for full training pipeline
-├── finetune.sh                   # Bash runner for classifier fine-tuning
-├── visualize_reconstruction.py   # Standalone reconstruction quality analysis
-├── solution.ipynb                # Complete Jupyter notebook with all analysis
-├── sparse_ae.pth                 # Pretrained sparse autoencoder weights
-├── sparse_classifier.pth         # Pretrained classifier weights
-├── pruning_analysis.png          # FLOPs vs error visualization
-└── README.md                     # This file
+├── train.py                          # Phase 1 & 2: Autoencoder training + Classifier fine-tuning
+├── finetune.py                       # Phase 2 & 3: Fine-tune classifier using trained autoencoder
+├── run.sh                            # Bash runner for full training pipeline
+├── finetune.sh                       # Bash runner for classifier fine-tuning
+├── visualize_reconstruction.py       # Standalone reconstruction quality analysis
+├── solution.ipynb                    # Complete Jupyter notebook with all analysis
+├── sparse_ae.pth                     # Trained sparse autoencoder weights
+├── sparse_classifier.pth             # Trained classifier weights
+├── images/                           # Directory containing visualizations
+│   ├── pruning_analysis.png          # FLOPs vs error tradeoff curve
+│   ├── reconstruction_quality.png    # Reconstruction quality metrics
+│   ├── output.png                    # Training output visualization
+│   └── sample_jets.png               # Sample event data visualization
+└── README.md                         # This file
 ```
 
 ## Quick Start
@@ -65,9 +69,9 @@ bash finetune.sh
 
 Uses `sparse_ae.pth` and trains only the classifier head.
 
-### Using Pre-trained Models
+### Using Trained Models
 
-Load and analyze the provided pretrained models:
+Load the saved weights from the training pipeline:
 
 ```python
 import torch
@@ -75,11 +79,11 @@ from train import SparseAutoencoder, SparseClassifier
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# Load autoencoder
+# Load trained autoencoder
 ae = SparseAutoencoder().to(device)
 ae.load_state_dict(torch.load("sparse_ae.pth", weights_only=False))
 
-# Load classifier
+# Load trained classifier
 clf = SparseClassifier().to(device)
 clf.load_state_dict(torch.load("sparse_classifier.pth", weights_only=False))
 ```
@@ -134,13 +138,21 @@ The models achieve:
 ## Results
 
 ### Pruning Analysis
-The `pruning_analysis.png` plot shows the classical pruning-accuracy tradeoff:
-- X-axis: Computational cost (FLOPs in billions)
-- Y-axis: Classification error increase (%)
+
+The `images/pruning_analysis.png` plot shows the classical pruning-accuracy tradeoff:
+
+![Pruning Analysis](images/pruning_analysis.png)
+
+- X-axis: Pruning ratio (fraction of weights pruned)
+- Y-axis: Test accuracy on labelled data
 - Shows sparse networks can achieve high compression with minimal accuracy loss
 
 ### Reconstruction Quality
+
 The sparse autoencoder successfully reconstructs high-energy regions while naturally sparsifying low-energy noise:
+
+![Reconstruction Quality](images/reconstruction_quality.png)
+
 - Original data: 98.78% sparse
 - Reconstructed data: Dense but captures essential structure
 - Per-sample MAE: 0.95 across test set
@@ -184,4 +196,14 @@ This implementation is provided for educational and research purposes.
 
 ## Citation
 
-If you use this code in research, please cite the original sparse neural network papers referenced in the architecture.
+
+```bibtex
+@article{Frankle2018,
+  title={Submanifold Sparse Convolutional Networks},
+  author={Benjamin Graham, Laurens van der Maaten},
+  journal={arXiv preprint arXiv:1706.01307},
+  year={2017}
+}
+```
+
+Reference: https://arxiv.org/pdf/1706.01307
