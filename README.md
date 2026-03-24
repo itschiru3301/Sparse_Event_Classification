@@ -37,18 +37,10 @@ sparse_ae_minimal/
 │   └── sparse_classifier.pth            # Trained classifier weights
 ├── images/                              # Generated visualizations
 │   ├── pruning_analysis.png             # Pruning-accuracy tradeoff curve
-│   └── reconstruction_quality.png       # Reconstruction metrics (if available)
-├── logs/                                # Training logs
-├── setup_docs/                          # Documentation
-│   ├── SETUP.md                         # Setup guide and troubleshooting
-│   └── ARCHITECTURE.md                  # Model architecture details
-├── train.py                             # Entry point for full training
-├── finetune.py                          # Entry point for fine-tuning only
-├── run.sh                               # Bash runner for full training (legacy)
-├── finetune.sh                          # Bash runner for fine-tuning (legacy)
+│   └── reconstruction_quality.png       # Reconstruction metrics
 ├── setup.sh                             # Automated setup script
 ├── requirements.txt                     # Python dependencies
-├── solution.ipynb                       # Jupyter notebook (optional)
+├── solution.ipynb                       # Jupyter notebook
 └── README.md                            # This file
 ```
 
@@ -237,21 +229,7 @@ Common issues:
 - **Out of memory**: Reduce `BATCH_SIZE` or `MAX_SAMPLES` in `src/configs.py`
 - **Data files not found**: Update paths in `src/configs.py`
 
-## Project Structure
 
-```
-src/                 # Modular source code
-├── configs.py       # Configuration parameters
-├── models.py        # All model architectures
-├── datasets.py      # Dataset classes
-├── utils.py         # Utility functions
-├── train.py         # Full training pipeline
-└── finetune.py      # Fine-tuning pipeline
-
-models/              # Pre-trained weights directory
-images/              # Generated visualizations
-logs/                # Training logs
-setup_docs/          # Documentation
 ```
 
 ## Reproducibility
