@@ -219,16 +219,6 @@ Expects H5 files with:
 
 The code automatically handles data loading with memory limits to prevent OOM on large datasets.
 
-## Troubleshooting
-
-For detailed troubleshooting and setup instructions, see [setup_docs/SETUP.md](setup_docs/SETUP.md).
-
-Common issues:
-- **Missing modules**: Run `bash setup.sh`
-- **CUDA not found**: Install PyTorch with correct CUDA version
-- **Out of memory**: Reduce `BATCH_SIZE` or `MAX_SAMPLES` in `src/configs.py`
-- **Data files not found**: Update paths in `src/configs.py`
-
 
 ```
 
