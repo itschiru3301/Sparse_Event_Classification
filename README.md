@@ -245,10 +245,6 @@ These are set automatically in all training scripts.
 - **Training time**: ~2-3 minutes per epoch (V100 GPU)
 - **Inference**: Real-time on modern hardware
 
-## License
-
-This implementation is provided for educational and research purposes.
-
 ## Citation
 
 ```bibtex
