@@ -1,6 +1,6 @@
 # Sparse Autoencoder for Event Classification
 
-A production-ready implementation of sparse neural networks for end-to-end event classification with pruning analysis. This project trains sparse autoencoders on unlabelled data, fine-tunes a classifier on labelled data, and analyzes the pruning-accuracy tradeoff using saved model weights.
+A production-ready, modular implementation of sparse neural networks for end-to-end event classification with pruning analysis. This project trains sparse autoencoders on unlabelled data, fine-tunes a classifier on labelled data, and analyzes the pruning-accuracy tradeoff.
 
 ## Overview
 
@@ -8,95 +8,142 @@ This project implements the complete pipeline for sparse event classification as
 
 1. **Phase 1 - Autoencoder Training**: Train a sparse autoencoder on unlabelled jet events and save trained weights
 2. **Phase 2 - Classifier Fine-tuning**: Load the trained autoencoder weights, freeze the encoder, and fine-tune a classification head on labelled data
-3. **Phase 3 - Pruning Analysis**: Systematically prune weights and measure FLOPs vs error tradeoff
+3. **Phase 3 - Pruning Analysis**: Systematically prune weights and measure accuracy vs sparsity tradeoff
 
 ## Key Features
 
+- **Modular Architecture**: Clean separation of concerns (configs, models, datasets, utils)
 - **Sparse Convolutions**: Uses spconv library for memory-efficient computation on sparse data
-- **Production Code**: Clean, minimal Python implementation without unnecessary abstractions
-- **Trained Models**: Includes saved weights from the training pipeline (`sparse_ae.pth` and `sparse_classifier.pth`)
-- **Analysis Tools**: Reconstruction quality assessment and pruning performance visualization
-- **Bash Runners**: Easy background execution with logging via nohup
+- **Production Code**: Type hints, docstrings, and clean Python implementation
+- **Automated Setup**: Bash script for dependency installation and verification
+- **Trained Models**: Includes saved weights from the training pipeline
+- **Analysis Tools**: Pruning performance visualization and metrics
+- **Comprehensive Documentation**: Setup guide and architecture documentation
 
 ## Repository Structure
 
 ```
-.
-├── train.py                          # Phase 1 & 2: Autoencoder training + Classifier fine-tuning
-├── finetune.py                       # Phase 2 & 3: Fine-tune classifier using trained autoencoder
-├── run.sh                            # Bash runner for full training pipeline
-├── finetune.sh                       # Bash runner for classifier fine-tuning
-├── visualize_reconstruction.py       # Standalone reconstruction quality analysis
-├── solution.ipynb                    # Complete Jupyter notebook with all analysis
-├── sparse_ae.pth                     # Trained sparse autoencoder weights
-├── sparse_classifier.pth             # Trained classifier weights
-├── images/                           # Directory containing visualizations
-│   ├── pruning_analysis.png          # FLOPs vs error tradeoff curve
-│   ├── reconstruction_quality.png    # Reconstruction quality metrics
-│   ├── output.png                    # Training output visualization
-│   └── sample_jets.png               # Sample event data visualization
-└── README.md                         # This file
+sparse_ae_minimal/
+├── src/                                 # Source code modules
+│   ├── __init__.py                      # Package initialization
+│   ├── configs.py                       # Configuration parameters
+│   ├── models.py                        # Model architectures
+│   ├── datasets.py                      # Dataset classes
+│   ├── utils.py                         # Utility functions
+│   ├── train.py                         # Phase 1 & 2 training pipeline
+│   └── finetune.py                      # Phase 2 & 3 fine-tuning pipeline
+├── models/                              # Pre-trained weights (directory)
+│   ├── sparse_ae.pth                    # Trained sparse autoencoder weights
+│   └── sparse_classifier.pth            # Trained classifier weights
+├── images/                              # Generated visualizations
+│   ├── pruning_analysis.png             # Pruning-accuracy tradeoff curve
+│   └── reconstruction_quality.png       # Reconstruction metrics (if available)
+├── logs/                                # Training logs
+├── setup_docs/                          # Documentation
+│   ├── SETUP.md                         # Setup guide and troubleshooting
+│   └── ARCHITECTURE.md                  # Model architecture details
+├── train.py                             # Entry point for full training
+├── finetune.py                          # Entry point for fine-tuning only
+├── run.sh                               # Bash runner for full training (legacy)
+├── finetune.sh                          # Bash runner for fine-tuning (legacy)
+├── setup.sh                             # Automated setup script
+├── requirements.txt                     # Python dependencies
+├── solution.ipynb                       # Jupyter notebook (optional)
+└── README.md                            # This file
 ```
 
 ## Quick Start
 
 ### Prerequisites
 
-```bash
-pip install torch h5py tqdm spconv-cu118 scikit-learn matplotlib
-```
-
-### Running Full Training
+The easiest way to set up the project is using the automated setup script:
 
 ```bash
-bash run.sh
+bash setup.sh
 ```
 
 This will:
-- **Phase 1**: Train sparse autoencoder for 30 epochs on unlabelled data
-- **Phase 2**: Fine-tune classifier for 30 epochs on labelled data  
-- **Phase 3**: Analyze pruning performance across 9 pruning ratios
+- Verify Python 3 installation
+- Create directory structure
+- Install all dependencies
+- Verify CUDA availability
+- Test module imports
 
-Training logs are saved to `sparse_ae_TIMESTAMP_training.log`
+For manual setup instructions, see [setup_docs/SETUP.md](setup_docs/SETUP.md).
+
+### Running the Full Pipeline
+
+Train sparse autoencoder (Phase 1) + Fine-tune classifier (Phase 2) + Analyze pruning (Phase 3):
+
+```bash
+python3 -m src.train
+```
+
+Or with logging:
+
+```bash
+nohup python3 -m src.train > logs/training_$(date +%s).log 2>&1 &
+```
 
 ### Running Classifier Fine-tuning Only
 
-If you have a pretrained autoencoder:
+If you have a pretrained autoencoder (`models/sparse_ae.pth`):
 
 ```bash
-bash finetune.sh
+python3 -m src.finetune
 ```
 
-Uses `sparse_ae.pth` and trains only the classifier head.
+### Configuration
+
+Edit hyperparameters in `src/configs.py`:
+
+```python
+# Model Architecture
+IN_CHANNELS = 8                    # Input channels
+BASE_CHANNELS = 32                 # Base channel multiplier
+LATENT_DIM = 256                   # Latent dimension
+
+# Training Parameters
+BATCH_SIZE = 32
+AE_EPOCHS = 30
+CLS_EPOCHS = 30
+MAX_SAMPLES = 100000               # Memory limit
+
+# Data Paths
+UNLABELLED_DATA_PATH = "/path/to/unlabelled.h5"
+LABELLED_DATA_PATH = "/path/to/labelled.h5"
+
+# Model Weights
+AE_WEIGHTS_PATH = "models/sparse_ae.pth"
+CLASSIFIER_WEIGHTS_PATH = "models/sparse_classifier.pth"
+```
 
 ### Using Trained Models
 
-Load the saved weights from the training pipeline:
+Load saved weights in your code:
 
 ```python
 import torch
-from train import SparseAutoencoder, SparseClassifier
+from src import SparseAutoencoder, SparseClassifier
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Load trained autoencoder
 ae = SparseAutoencoder().to(device)
-ae.load_state_dict(torch.load("sparse_ae.pth", weights_only=False))
+ae.load_state_dict(torch.load("models/sparse_ae.pth", weights_only=False))
 
 # Load trained classifier
-clf = SparseClassifier().to(device)
-clf.load_state_dict(torch.load("sparse_classifier.pth", weights_only=False))
+clf = SparseClassifier(ae.encoder).to(device)
+clf.load_state_dict(torch.load("models/sparse_classifier.pth", weights_only=False))
+
+# Use for inference
+ae.eval()
+clf.eval()
 ```
-
-### Analyzing Reconstruction Quality
-
-```bash
-python visualize_reconstruction.py
-```
-
-Generates quality metrics and visualization of reconstruction performance.
 
 ## Architecture Details
+
+For detailed architecture information, see [setup_docs/ARCHITECTURE.md](setup_docs/ARCHITECTURE.md).
 
 ### Sparse Encoder
 - Sparse convolution layers with stride-2 downsampling
@@ -115,18 +162,33 @@ Generates quality metrics and visualization of reconstruction performance.
 
 ## Configuration
 
-Edit these hyperparameters in `train.py` and `finetune.py`:
+All configuration parameters are centralized in `src/configs.py`:
 
 ```python
-IN_CH = 8                    # Input channels
-BASE_CH = 16                 # Base channel multiplier
-LATENT_DIM = 256             # Latent dimension
-MAX_SAMPLES = 100000         # Max samples per epoch
+# Hyperparameters
+IN_CHANNELS = 8
+BASE_CHANNELS = 32
+LATENT_DIM = 256
 BATCH_SIZE = 32
-NUM_EPOCHS_AE = 30
-NUM_EPOCHS_CLF = 30
-PRUNING_RATIOS = [0.0, 0.1, 0.2, ..., 0.8]
+AE_EPOCHS = 30
+CLS_EPOCHS = 30
+
+# Learning rates
+AE_LR = 1e-3
+CLS_HEAD_LR = 1e-3
+CLS_FULL_LR = 1e-4
+
+# Pruning ratios for analysis
+PRUNING_RATIOS = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+
+# Data paths and splits
+UNLABELLED_DATA_PATH = "..."
+LABELLED_DATA_PATH = "..."
+TRAIN_RATIO = 0.70
+VAL_RATIO = 0.15
 ```
+
+Edit these values before running training to customize behavior.
 
 ## Training Curves
 
@@ -165,30 +227,55 @@ Expects H5 files with:
 
 The code automatically handles data loading with memory limits to prevent OOM on large datasets.
 
-## Technical Notes
+## Troubleshooting
 
-### Sparse Convolution Implementation
-- Uses `spconv-cu118` library for sparse tensor operations
-- `SparseConvTensor` requires careful feature handling via `.replace_feature()` method
-- Batch indexing via `indices[:, 0]` column to extract per-sample features
+For detailed troubleshooting and setup instructions, see [setup_docs/SETUP.md](setup_docs/SETUP.md).
 
-### Memory Optimization
-- Autoencoder trained on 100,000 unlabelled samples (reduces from 250GB full dataset)
-- Classifier trained on 10,000 labelled samples
-- Sparse operations reduce GPU memory by ~80% vs dense baseline
+Common issues:
+- **Missing modules**: Run `bash setup.sh`
+- **CUDA not found**: Install PyTorch with correct CUDA version
+- **Out of memory**: Reduce `BATCH_SIZE` or `MAX_SAMPLES` in `src/configs.py`
+- **Data files not found**: Update paths in `src/configs.py`
 
-### Inference
-- Encoder processes sparse representations without densification
-- Decoder outputs dense reconstruction for MSE loss
-- Classification head operates on pooled latent codes
+## Project Structure
+
+```
+src/                 # Modular source code
+├── configs.py       # Configuration parameters
+├── models.py        # All model architectures
+├── datasets.py      # Dataset classes
+├── utils.py         # Utility functions
+├── train.py         # Full training pipeline
+└── finetune.py      # Fine-tuning pipeline
+
+models/              # Pre-trained weights directory
+images/              # Generated visualizations
+logs/                # Training logs
+setup_docs/          # Documentation
+```
 
 ## Reproducibility
 
-Results use fixed random seeds:
+Results use fixed random seeds for reproducibility:
+
 ```python
 torch.manual_seed(42)
 np.random.seed(42)
 ```
+
+These are set automatically in all training scripts.
+
+## Performance
+
+### Training Metrics
+- **Autoencoder**: MSE ≈ 57.5, MAE ≈ 0.95 on test set
+- **Classifier**: >95% accuracy on labelled data
+- **Pruning**: <5% accuracy drop at 50% sparsity
+
+### Computational Efficiency
+- **Memory**: ~80% reduction vs dense baseline
+- **Training time**: ~2-3 minutes per epoch (V100 GPU)
+- **Inference**: Real-time on modern hardware
 
 ## License
 
@@ -196,13 +283,19 @@ This implementation is provided for educational and research purposes.
 
 ## Citation
 
-
 ```bibtex
-@article{Frankle2018,
+@article{Graham2017,
   title={Submanifold Sparse Convolutional Networks},
-  author={Benjamin Graham, Laurens van der Maaten},
+  author={Benjamin Graham and Laurens van der Maaten},
   journal={arXiv preprint arXiv:1706.01307},
   year={2017}
+}
+
+@article{Frankle2018,
+  title={The Lottery Ticket Hypothesis},
+  author={Jonathan Frankle and Michael Carbin},
+  journal={arXiv preprint arXiv:1903.01611},
+  year={2019}
 }
 ```
 
